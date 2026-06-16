@@ -107,6 +107,12 @@ subscriber. A single-process assumption keeps it simple; scaling horizontally
 would swap the implementation for Redis pub/sub or Postgres `LISTEN/NOTIFY`
 behind the same interface, with no change to the runner or endpoint.
 
+Both SSE endpoints (workflow progress and chat) do their DB reads in a
+**short-lived session that is released before the long-lived stream begins** —
+the streaming loop then reads only from the in-process queue. So an open SSE
+connection never pins a pooled DB connection for the lifetime of the stream,
+which would otherwise let a handful of idle viewers exhaust the connection pool.
+
 ## Configuration, logging, errors
 
 - **Config** — one typed `Settings` (pydantic-settings); no scattered `os.getenv`.

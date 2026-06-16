@@ -36,7 +36,6 @@ async def list_messages(session_id: str, db: DbSession) -> list[ChatMessageRead]
 async def chat(
     session_id: str,
     payload: ChatRequest,
-    db: DbSession,
 ) -> EventSourceResponse:
     """
     Stream a follow-up answer over Server-Sent Events.
@@ -47,21 +46,23 @@ async def chat(
     the assistant turn once the answer is complete — both via a fresh session, so
     the writes don't depend on the request-scoped session's streaming lifecycle.
     """
-    if await repo.get_session(db, session_id) is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Short-lived session for validation + grounding snapshot, released before the
+    # stream so an open SSE connection doesn't pin a pooled DB connection. Snapshot
+    # everything the generator needs as plain values while the session is open.
+    async with SessionLocal() as db:
+        if await repo.get_session(db, session_id) is None:
+            raise HTTPException(status_code=404, detail="Session not found")
 
-    report_row = await repo.get_report(db, session_id)
-    if report_row is None:
-        raise HTTPException(
-            status_code=409,
-            detail="No report yet — run the workflow before chatting.",
-        )
+        report_row = await repo.get_report(db, session_id)
+        if report_row is None:
+            raise HTTPException(
+                status_code=409,
+                detail="No report yet — run the workflow before chatting.",
+            )
 
-    # Snapshot the grounding context and history as plain values while the
-    # request session is open; the generator runs after the route returns.
-    report = report_row.content
-    prior = await repo.list_messages(db, session_id)
-    history = [{"role": m.role, "content": m.content} for m in prior]
+        report = report_row.content
+        prior = await repo.list_messages(db, session_id)
+        history = [{"role": m.role, "content": m.content} for m in prior]
     question = payload.message
 
     async def event_generator() -> AsyncIterator[dict]:
