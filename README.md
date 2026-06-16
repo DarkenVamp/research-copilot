@@ -194,7 +194,9 @@ uv run pytest        # graph + end-to-end API tests (spins up an ephemeral
 uv run ruff check .  # lint
 
 cd ../frontend
-npm run typecheck    # strict TypeScript
+npm run typecheck     # strict TypeScript
+npm run lint          # ESLint (flat config)
+npm run format:check  # Prettier
 npm run build
 ```
 
