@@ -29,3 +29,9 @@ dist/
 *.db
 pgdata/
 *.pdf
+
+# Playwright MCP artifacts
+.playwright-mcp/
+*.sqlite-*
+*.db-shm
+*.db-wal
