@@ -82,6 +82,9 @@ After `quality_check`, `route_after_quality` returns:
   checkpoint tables are excluded from autogenerate via `include_name`).
 - **Graph checkpoints** in a separate set of LangGraph-managed tables, on a
   dedicated psycopg connection pool.
+- **One driver: psycopg 3** (async, non-blocking) for both the SQLAlchemy engine
+  and the checkpointer — the checkpointer is psycopg-only, so this avoids a second
+  Postgres driver (asyncpg). See `engineering-decisions.md` §3.
 - Single datastore: Postgres (PG18 + pgvector) everywhere — production, local
   dev (`docker compose up postgres`), and tests (an ephemeral Postgres via
   testcontainers). No second dialect to keep in sync.

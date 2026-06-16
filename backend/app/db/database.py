@@ -21,6 +21,10 @@ class Base(DeclarativeBase):
     pass
 
 
+# Driver: psycopg 3 (the `postgresql+psycopg://` URL). Its async API is
+# non-blocking on the event loop, and it's the single Postgres driver shared with
+# the LangGraph checkpointer (which is psycopg-only) — so we don't pull in asyncpg.
+# See docs/engineering-decisions.md §3.
 engine = create_async_engine(
     settings.database_url,
     echo=False,

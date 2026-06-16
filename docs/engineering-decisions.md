@@ -54,6 +54,20 @@ the tests exercise exactly what production runs — real `JSONB` behaviour and t
 the product targets Postgres, fidelity and a single code path beat zero-setup
 tests; testcontainers keeps `pytest` to one command despite the new dependency.
 
+**Driver — psycopg 3, not asyncpg.** Both the SQLAlchemy async engine
+(`postgresql+psycopg://`) and the LangGraph checkpointer use **psycopg 3**.
+LangGraph's `langgraph-checkpoint-postgres` is built on psycopg 3
+(`AsyncPostgresSaver` takes a psycopg connection/pool; asyncpg isn't supported
+there), so choosing asyncpg for the app layer would mean running *two* Postgres
+drivers and two connection pools. psycopg 3 has a first-class async API
+(`AsyncConnection`/`AsyncConnectionPool`) — non-blocking libpq driven by the
+event loop — so async routes don't block (that concern applies to the sync-only
+**psycopg2**, which we don't use). The one synchronous psycopg path is the
+Alembic runner, which `init_db` executes via `asyncio.to_thread` so it doesn't
+block the loop either. Trade-off: asyncpg is faster in raw driver benchmarks, but
+this workload is dominated by LLM/web-search latency, not DB round-trips, so a
+single unified driver is the better call here.
+
 ---
 
 ## Top technical-debt items
