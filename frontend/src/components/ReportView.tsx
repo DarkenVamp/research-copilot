@@ -27,7 +27,10 @@ export function ReportView({ report }: { report: ResearchReport }) {
       </section>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <ListSection title="Products & Services" items={report.products_and_services} />
+        <ListSection
+          title="Products & Services"
+          items={report.products_and_services}
+        />
         <ListSection title="Target Customers" items={report.target_customers} />
         <ListSection title="Business Signals" items={report.business_signals} />
         <ListSection

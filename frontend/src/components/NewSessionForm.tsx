@@ -30,7 +30,9 @@ export function NewSessionForm() {
       await api.runWorkflow(session.id).catch(() => undefined);
       navigate(`/sessions/${session.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create session.");
+      setError(
+        err instanceof Error ? err.message : "Failed to create session.",
+      );
     }
   }
 

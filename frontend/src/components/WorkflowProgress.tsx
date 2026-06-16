@@ -48,7 +48,8 @@ export function WorkflowProgress({
 
   // The first not-yet-completed node is the one currently running.
   const firstPending = NODES.findIndex((n) => !byNode[n.key]);
-  const running = enabled && !finished && status !== "completed" && status !== "failed";
+  const running =
+    enabled && !finished && status !== "completed" && status !== "failed";
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">

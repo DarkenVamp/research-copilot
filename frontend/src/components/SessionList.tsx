@@ -8,7 +8,9 @@ export function SessionList() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between p-4">
-        <h1 className="text-lg font-semibold text-slate-800">Research Copilot</h1>
+        <h1 className="text-lg font-semibold text-slate-800">
+          Research Copilot
+        </h1>
       </div>
       <NavLink
         to="/"

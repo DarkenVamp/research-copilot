@@ -49,7 +49,9 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       );
     } catch (err) {
       if (!controller.signal.aborted) {
-        setError(err instanceof ApiError ? err.message : "Something went wrong.");
+        setError(
+          err instanceof ApiError ? err.message : "Something went wrong.",
+        );
       }
     } finally {
       // Refetch the canonical persisted turns, then drop the optimistic ones —
@@ -64,15 +66,16 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   return (
     <div className="flex flex-col rounded-xl border border-slate-200 bg-white">
       <div className="border-b border-slate-100 px-5 py-3">
-        <h2 className="text-sm font-semibold text-slate-700">
-          Follow-up chat
-        </h2>
+        <h2 className="text-sm font-semibold text-slate-700">Follow-up chat</h2>
         <p className="text-xs text-slate-400">
           Ask questions grounded in this report.
         </p>
       </div>
 
-      <div ref={scrollRef} className="max-h-96 flex-1 space-y-3 overflow-y-auto p-5">
+      <div
+        ref={scrollRef}
+        className="max-h-96 flex-1 space-y-3 overflow-y-auto p-5"
+      >
         {(!messages || messages.length === 0) && !streaming && (
           <p className="text-sm text-slate-400">
             No messages yet — try “What should I lead with in the meeting?”
@@ -100,7 +103,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         )}
       </div>
 
-      <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-100 p-3">
+      <form
+        onSubmit={handleSend}
+        className="flex gap-2 border-t border-slate-100 p-3"
+      >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -131,7 +137,9 @@ function Bubble({
   cursor?: boolean;
 }) {
   return (
-    <div className={`flex ${role === "user" ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`flex ${role === "user" ? "justify-end" : "justify-start"}`}
+    >
       <div
         className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm ${
           role === "user"

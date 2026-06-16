@@ -59,7 +59,10 @@ async function streamChat(
 ): Promise<void> {
   const res = await fetch(`${BASE}/api/sessions/${id}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    },
     body: JSON.stringify({ message }),
     signal,
   });

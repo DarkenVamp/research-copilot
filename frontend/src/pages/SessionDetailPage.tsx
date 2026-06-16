@@ -32,11 +32,7 @@ export function SessionDetailPage() {
     return <div className="p-10 text-sm text-slate-400">Loading session…</div>;
   }
   if (isError || !session) {
-    return (
-      <div className="p-10 text-sm text-red-600">
-        Session not found.
-      </div>
-    );
+    return <div className="p-10 text-sm text-red-600">Session not found.</div>;
   }
 
   const showProgress = session.status !== "created" || started;
