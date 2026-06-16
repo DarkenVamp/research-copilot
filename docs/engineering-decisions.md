@@ -100,7 +100,9 @@ token/cost budgets per run.
 
 - **Durable execution:** move runs to a real queue (e.g. Celery/Arq) with a
   worker that auto-resumes interrupted graphs from their checkpoints.
-- **Migrations & multi-tenancy:** Alembic; users/auth; per-user session scoping.
+- **Multi-tenancy:** users/auth and per-user session scoping; move migration
+  execution out of the web process into a separate release step (Alembic is
+  already in place, applied on startup).
 - **Evaluation harness:** golden companies + an LLM-graded rubric to measure
   report quality across prompt/model changes (and gate deploys on it).
 - **Cost & caching:** cache Tavily/website fetches, add per-run token budgets,
