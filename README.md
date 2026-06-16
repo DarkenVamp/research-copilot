@@ -131,6 +131,22 @@ Backend settings (see [`backend/.env.example`](backend/.env.example)):
 
 ---
 
+## Database migrations
+
+Alembic is the source of truth for the app schema (the LangGraph checkpoint
+tables are managed separately by the checkpointer). The backend applies
+`alembic upgrade head` automatically on startup, so normally you don't run
+anything by hand. To work with migrations directly:
+
+```bash
+cd backend
+uv run alembic upgrade head                        # apply
+uv run alembic revision --autogenerate -m "msg"    # create a new migration
+uv run alembic downgrade -1                         # roll back one
+```
+
+---
+
 ## API
 
 | Method | Path                              | Purpose |

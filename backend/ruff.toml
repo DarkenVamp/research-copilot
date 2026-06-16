@@ -7,6 +7,9 @@
 #     "E9",   # Pycodestyle E9xx errors (syntax)
 # ]
 
+# Alembic owns its generated migration scripts; don't lint them with app rules.
+extend-exclude = ["alembic"]
+
 lint.extend-select = [
     "E",   # Pycodestyle errors (style issues)
     "W",   # Pycodestyle warnings (style issues)

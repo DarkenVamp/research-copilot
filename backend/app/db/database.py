@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Annotated
 
@@ -31,16 +32,14 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSe
 
 async def init_db() -> None:
     """
-    Create tables on startup.
+    Apply Alembic migrations to head on startup.
 
-    A real deployment would use Alembic migrations; create_all keeps the
-    assignment runnable with a single command.
+    Alembic is the single source of truth for the app schema. The runner is
+    synchronous, so it runs in a worker thread to avoid blocking the event loop.
     """
-    # Local import avoids a circular import (models import Base from this module).
-    from app.db import models  # noqa: F401, PLC0415
+    from app.db.migrate import run_migrations  # noqa: PLC0415
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await asyncio.to_thread(run_migrations)
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:

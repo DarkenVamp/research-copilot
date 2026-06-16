@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir uv
 # Install dependencies first for better layer caching.
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY alembic.ini ./
+COPY alembic ./alembic
 RUN uv pip install --system --no-cache .
 
 EXPOSE 8000

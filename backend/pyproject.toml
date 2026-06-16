@@ -10,6 +10,7 @@ dependencies = [
     "pydantic-settings>=2.14.1",
     "sse-starlette>=3.4.4",
     "sqlalchemy[asyncio]>=2.0.50",
+    "alembic>=1.13",
     "psycopg[binary,pool]>=3.3.4",
     "langgraph>=1.2.5",
     "langgraph-checkpoint-postgres>=3.1.0",

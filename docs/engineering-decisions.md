@@ -58,8 +58,10 @@ tests; testcontainers keeps `pytest` to one command despite the new dependency.
 
 ## Top technical-debt items
 
-1. **`create_all` instead of migrations.** Schema is created on startup. Fine for
-   a demo; production needs Alembic migrations for safe evolution.
+1. **Migrations run at app startup.** Alembic is the schema source of truth, but
+   the app applies `upgrade head` on boot. Convenient and safe for a single
+   instance; multi-replica deploys should run migrations as a separate release
+   step (a job/init-container) instead of in the web process.
 2. **In-process pub/sub.** Progress streaming is bound to a single backend
    process; multiple workers wouldn't share events.
 3. **Background tasks via `asyncio.create_task`.** Runs are fire-and-forget in the

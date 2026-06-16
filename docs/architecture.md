@@ -77,7 +77,9 @@ After `quality_check`, `route_after_quality` returns:
 ## Persistence (`app/db/`)
 
 - **Application data** via async SQLAlchemy (psycopg3 driver): `sessions`,
-  `reports`, `workflow_events`, `chat_messages`. JSON payloads use `JSONB`.
+  `reports`, `workflow_events`, `chat_messages`. JSON payloads use `JSONB`. The
+  schema is managed by **Alembic** (applied on startup; `AsyncPostgresSaver`
+  checkpoint tables are excluded from autogenerate via `include_name`).
 - **Graph checkpoints** in a separate set of LangGraph-managed tables, on a
   dedicated psycopg connection pool.
 - Single datastore: Postgres (PG18 + pgvector) everywhere — production, local
