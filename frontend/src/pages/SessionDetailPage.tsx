@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ChatPanel } from "../components/ChatPanel";
@@ -5,6 +6,7 @@ import { ReportView } from "../components/ReportView";
 import { StatusBadge } from "../components/StatusBadge";
 import { WorkflowProgress } from "../components/WorkflowProgress";
 import {
+  sessionKeys,
   useResumeWorkflow,
   useRunWorkflow,
   useSession,
@@ -12,10 +14,17 @@ import {
 
 export function SessionDetailPage() {
   const { id = "" } = useParams();
+  const queryClient = useQueryClient();
   const { data: session, isLoading, isError, refetch } = useSession(id);
   const runWorkflow = useRunWorkflow(id);
   const resumeWorkflow = useResumeWorkflow(id);
   const [started, setStarted] = useState(false);
+
+  // When a run finishes, refresh this session and the sidebar list (status badge).
+  function handleFinished() {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: sessionKeys.all });
+  }
 
   if (isLoading) {
     return <div className="p-10 text-sm text-slate-400">Loading session…</div>;
@@ -96,7 +105,7 @@ export function SessionDetailPage() {
             sessionId={session.id}
             enabled={showProgress}
             status={session.status}
-            onFinished={() => refetch()}
+            onFinished={handleFinished}
           />
         )}
 

@@ -1,4 +1,5 @@
-"""FastAPI application entry point.
+"""
+FastAPI application entry point.
 
 Wires logging, CORS, request logging, a consistent error envelope, the database
 bootstrap, and the LangGraph engine lifecycle. Routers are mounted under /api.
@@ -25,11 +26,14 @@ logger = get_logger("app.main")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     configure_logging(settings.log_level)
     logger.info(
         "starting up",
-        extra={"ctx_mock_mode": settings.mock_mode, "ctx_real_search": settings.use_real_search},
+        extra={
+            "ctx_mock_mode": settings.mock_mode,
+            "ctx_real_search": settings.use_real_search,
+        },
     )
     await init_db()
     await engine.startup()
@@ -69,7 +73,7 @@ async def log_requests(request: Request, call_next):
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+async def http_exception_handler(_request: Request, exc: StarletteHTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": "request_failed", "detail": exc.detail},
@@ -77,7 +81,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(_request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=422,
         content={"error": "validation_error", "detail": exc.errors()},
@@ -85,7 +89,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(request: Request, exc: Exception):
+async def unhandled_exception_handler(request: Request, _exc: Exception):
     logger.exception("unhandled error", extra={"ctx_path": request.url.path})
     return JSONResponse(
         status_code=500,

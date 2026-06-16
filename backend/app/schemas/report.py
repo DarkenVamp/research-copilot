@@ -1,4 +1,5 @@
-"""Structured-output schemas for the LangGraph workflow.
+"""
+Structured-output schemas for the LangGraph workflow.
 
 These Pydantic models are reused two ways: as the schema the LLM is forced to
 fill (`with_structured_output`) and as the validated shape stored/served by the
@@ -19,10 +20,10 @@ class ResearchPlan(BaseModel):
     """Planner node output: how the research will be approached."""
 
     focus_areas: list[str] = Field(
-        description="The 3-6 themes worth investigating for this objective"
+        description="The 3-6 themes worth investigating for this objective",
     )
     search_queries: list[str] = Field(
-        description="Concrete web-search queries to run to gather evidence"
+        description="Concrete web-search queries to run to gather evidence",
     )
     rationale: str = Field(description="Why this plan fits the stated objective")
 
@@ -39,7 +40,8 @@ class Analysis(BaseModel):
     )
     risks_and_challenges: list[str] = Field(default_factory=list)
     unknowns: list[str] = Field(
-        default_factory=list, description="Important things that could not be confirmed"
+        default_factory=list,
+        description="Important things that could not be confirmed",
     )
 
 
@@ -49,7 +51,8 @@ class QualityAssessment(BaseModel):
     score: float = Field(description="Overall quality 0.0-1.0", ge=0.0, le=1.0)
     passed: bool = Field(description="Whether the analysis is good enough to finalize")
     issues: list[str] = Field(
-        default_factory=list, description="Concrete weaknesses found"
+        default_factory=list,
+        description="Concrete weaknesses found",
     )
     gaps_to_research: list[str] = Field(
         default_factory=list,
@@ -66,10 +69,12 @@ class ResearchReport(BaseModel):
     business_signals: list[str] = Field(default_factory=list)
     risks_and_challenges: list[str] = Field(default_factory=list)
     discovery_questions: list[str] = Field(
-        default_factory=list, description="Questions to ask in the meeting"
+        default_factory=list,
+        description="Questions to ask in the meeting",
     )
     outreach_strategy: list[str] = Field(
-        default_factory=list, description="Recommended outreach approach as steps"
+        default_factory=list,
+        description="Recommended outreach approach as steps",
     )
     unknowns: list[str] = Field(default_factory=list)
     sources: list[Source] = Field(default_factory=list)

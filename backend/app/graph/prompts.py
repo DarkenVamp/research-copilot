@@ -1,4 +1,5 @@
-"""Prompt templates for each LangGraph node.
+"""
+Prompt templates for each LangGraph node.
 
 Prompts are deliberately explicit about grounding ("cite sources", "list what you
 could not confirm under Unknowns") because the product is a research briefing —

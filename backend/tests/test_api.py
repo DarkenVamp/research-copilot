@@ -50,7 +50,8 @@ def test_full_session_flow():
         # Workflow events were persisted, including the report node.
         events = client.get(f"/api/sessions/{sid}/events").json()
         nodes = [e["node"] for e in events]
-        assert "planner" in nodes and "report" in nodes
+        assert "planner" in nodes
+        assert "report" in nodes
 
         # Follow-up chat works and persists both turns.
         chat = client.post(f"/api/sessions/{sid}/chat", json={"message": "Hello?"})

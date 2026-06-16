@@ -1,4 +1,5 @@
-"""Assemble the compiled LangGraph workflow.
+"""
+Assemble the compiled LangGraph workflow.
 
     START → planner → research → analysis → quality_check ─┐
                           ▲                                 │ (conditional)

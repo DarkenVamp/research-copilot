@@ -1,4 +1,5 @@
-"""Application configuration via pydantic-settings.
+"""
+Application configuration via pydantic-settings.
 
 All runtime configuration is read from environment variables (or a local .env
 file). Keeping it in one typed Settings object means every module reads the same
@@ -14,7 +15,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     app_name: str = "AI Research Copilot"
@@ -51,7 +54,8 @@ class Settings(BaseSettings):
 
     @property
     def checkpointer_dsn(self) -> str:
-        """Plain psycopg DSN for the LangGraph Postgres checkpointer.
+        """
+        Plain psycopg DSN for the LangGraph Postgres checkpointer.
 
         SQLAlchemy needs the ``+psycopg`` driver suffix; psycopg itself does not.
         """

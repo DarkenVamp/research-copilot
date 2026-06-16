@@ -6,7 +6,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.report import ResearchReport
+# Imported at runtime (not under TYPE_CHECKING): Pydantic resolves this annotation
+# when building SessionDetail.
+from app.schemas.report import ResearchReport  # noqa: TC001
 
 
 class SessionCreate(BaseModel):

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from collections.abc import Coroutine
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +20,19 @@ from app.services.workflow_runner import run_workflow
 
 router = APIRouter(tags=["workflow"])
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
 _TERMINAL = {"done", "error"}
+
+# Hold references to fire-and-forget workflow tasks so they are not
+# garbage-collected mid-run (see ruff RUF006).
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _spawn(coro: Coroutine[Any, Any, None]) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 async def _require_session(session_id: str, db: AsyncSession):
@@ -28,42 +43,41 @@ async def _require_session(session_id: str, db: AsyncSession):
 
 
 @router.post("/sessions/{session_id}/run", status_code=202)
-async def run(session_id: str, db: AsyncSession = Depends(get_db)) -> dict:
+async def run(session_id: str, db: DbSession) -> dict:
     session = await _require_session(session_id, db)
     if session.status == STATUS_RUNNING:
         raise HTTPException(status_code=409, detail="Workflow already running")
-    asyncio.create_task(run_workflow(session_id))
+    _spawn(run_workflow(session_id))
     return {"status": "started", "session_id": session_id}
 
 
 @router.post("/sessions/{session_id}/resume", status_code=202)
-async def resume(session_id: str, db: AsyncSession = Depends(get_db)) -> dict:
+async def resume(session_id: str, db: DbSession) -> dict:
     session = await _require_session(session_id, db)
     if session.status == STATUS_RUNNING:
         raise HTTPException(status_code=409, detail="Workflow already running")
-    asyncio.create_task(run_workflow(session_id, resume=True))
+    _spawn(run_workflow(session_id, resume=True))
     return {"status": "resuming", "session_id": session_id}
 
 
 @router.get("/sessions/{session_id}/events", response_model=list[WorkflowEventRead])
-async def event_history(
-    session_id: str, db: AsyncSession = Depends(get_db)
-) -> list[WorkflowEventRead]:
+async def event_history(session_id: str, db: DbSession) -> list[WorkflowEventRead]:
     await _require_session(session_id, db)
     events = await repo.list_events(db, session_id)
     return [WorkflowEventRead.model_validate(e) for e in events]
 
 
 @router.get("/sessions/{session_id}/stream")
-async def stream(session_id: str, request: Request, db: AsyncSession = Depends(get_db)):
-    """Server-Sent Events stream of workflow progress.
+async def stream(session_id: str, request: Request, db: DbSession):
+    """
+    Server-Sent Events stream of workflow progress.
 
     Subscribes first (so no live event is missed), replays any already-persisted
     events for late subscribers, then tails live events until a terminal event.
     """
     session = await _require_session(session_id, db)
     queue = pubsub.subscribe(session_id)
-    seen: set[str] = set()
+    seen: set[int] = set()
 
     # Snapshot of events that already happened (catch-up).
     persisted = await repo.list_events(db, session_id)
@@ -94,8 +108,6 @@ async def stream(session_id: str, request: Request, db: AsyncSession = Depends(g
                     continue
                 if msg.get("id"):
                     seen.add(msg["id"])
-
-                import json
 
                 yield {"event": msg.get("type", "node"), "data": json.dumps(msg)}
                 if msg.get("type") in _TERMINAL:

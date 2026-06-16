@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,11 +14,11 @@ from app.schemas.api import ChatMessageRead, ChatRequest, ChatResponse
 
 router = APIRouter(tags=["chat"])
 
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
 
 @router.get("/sessions/{session_id}/messages", response_model=list[ChatMessageRead])
-async def list_messages(
-    session_id: str, db: AsyncSession = Depends(get_db)
-) -> list[ChatMessageRead]:
+async def list_messages(session_id: str, db: DbSession) -> list[ChatMessageRead]:
     if await repo.get_session(db, session_id) is None:
         raise HTTPException(status_code=404, detail="Session not found")
     messages = await repo.list_messages(db, session_id)
@@ -25,7 +27,7 @@ async def list_messages(
 
 @router.post("/sessions/{session_id}/chat", response_model=ChatResponse)
 async def chat(
-    session_id: str, payload: ChatRequest, db: AsyncSession = Depends(get_db)
+    session_id: str, payload: ChatRequest, db: DbSession,
 ) -> ChatResponse:
     if await repo.get_session(db, session_id) is None:
         raise HTTPException(status_code=404, detail="Session not found")

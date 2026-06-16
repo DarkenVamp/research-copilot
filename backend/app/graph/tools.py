@@ -1,4 +1,5 @@
-"""Research tools: Tavily web search + plain web fetch.
+"""
+Research tools: Tavily web search + plain web fetch.
 
 Both degrade gracefully: when no Tavily key is configured they return
 deterministic mock results so the whole workflow runs offline.
@@ -10,6 +11,7 @@ import os
 import re
 
 import httpx
+from langchain_tavily import TavilySearch
 
 from app.config import settings
 from app.logging_config import get_logger
@@ -49,7 +51,6 @@ async def web_search(query: str) -> list[dict]:
 
     # langchain-tavily reads the key from the environment.
     os.environ.setdefault("TAVILY_API_KEY", settings.tavily_api_key)
-    from langchain_tavily import TavilySearch
 
     tool = TavilySearch(max_results=settings.tavily_max_results)
     raw = await tool.ainvoke({"query": query})
@@ -62,7 +63,7 @@ async def web_search(query: str) -> list[dict]:
                     "title": r.get("title", "") or "Untitled",
                     "url": r.get("url", ""),
                     "content": r.get("content", "") or "",
-                }
+                },
             )
     return out
 

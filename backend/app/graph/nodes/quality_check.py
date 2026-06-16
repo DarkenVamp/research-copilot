@@ -1,4 +1,5 @@
-"""Quality-check node: LLM-as-judge that drives the conditional retry loop.
+"""
+Quality-check node: LLM-as-judge that drives the conditional retry loop.
 
 The pass/fail decision is enforced against the configured threshold rather than
 trusting the model's own boolean, so routing is deterministic and tunable.
@@ -13,7 +14,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.config import settings
 from app.graph import mock, prompts
 from app.graph.llm import get_chat
-from app.graph.state import ResearchState
+from app.graph.state import (
+    ResearchState,  # noqa: TC001 - used as a runtime-cheap annotation
+)
 from app.logging_config import get_logger
 from app.schemas.report import QualityAssessment
 
@@ -37,9 +40,9 @@ async def quality_node(state: ResearchState) -> dict:
                         content=prompts.QUALITY_USER.format(
                             objective=objective,
                             analysis=json.dumps(analysis, indent=2),
-                        )
+                        ),
                     ),
-                ]
+                ],
             )
             # Enforce the threshold ourselves for deterministic routing.
             qa.passed = qa.score >= settings.quality_threshold

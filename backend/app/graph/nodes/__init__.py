@@ -7,9 +7,9 @@ from app.graph.nodes.report import report_node
 from app.graph.nodes.research import research_node
 
 __all__ = [
-    "planner_node",
-    "research_node",
     "analysis_node",
+    "planner_node",
     "quality_node",
     "report_node",
+    "research_node",
 ]

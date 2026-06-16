@@ -1,4 +1,5 @@
-"""Data-access helpers.
+"""
+Data-access helpers.
 
 These wrap all SQL so the API and workflow layers never build queries inline.
 Relationships are fetched with explicit queries (not lazy loading), which is the
@@ -21,7 +22,11 @@ from app.db.models import (
 
 # ---- Sessions ---------------------------------------------------------------
 async def create_session(
-    db: AsyncSession, *, company_name: str, website: str | None, objective: str
+    db: AsyncSession,
+    *,
+    company_name: str,
+    website: str | None,
+    objective: str,
 ) -> ResearchSession:
     session = ResearchSession(
         company_name=company_name,
@@ -41,13 +46,16 @@ async def get_session(db: AsyncSession, session_id: str) -> ResearchSession | No
 
 async def list_sessions(db: AsyncSession) -> list[ResearchSession]:
     result = await db.execute(
-        select(ResearchSession).order_by(ResearchSession.created_at.desc())
+        select(ResearchSession).order_by(ResearchSession.created_at.desc()),
     )
     return list(result.scalars().all())
 
 
 async def update_session_status(
-    db: AsyncSession, session_id: str, status: str, error: str | None = None
+    db: AsyncSession,
+    session_id: str,
+    status: str,
+    error: str | None = None,
 ) -> None:
     session = await db.get(ResearchSession, session_id)
     if session is None:
@@ -58,7 +66,7 @@ async def update_session_status(
 
 
 # ---- Workflow events --------------------------------------------------------
-async def add_event(
+async def add_event(  # noqa: PLR0913 - explicit event fields read better than a dict here
     db: AsyncSession,
     session_id: str,
     *,
@@ -84,7 +92,7 @@ async def list_events(db: AsyncSession, session_id: str) -> list[WorkflowEvent]:
     result = await db.execute(
         select(WorkflowEvent)
         .where(WorkflowEvent.session_id == session_id)
-        .order_by(WorkflowEvent.id.asc())
+        .order_by(WorkflowEvent.id.asc()),
     )
     return list(result.scalars().all())
 
@@ -111,7 +119,11 @@ async def get_report(db: AsyncSession, session_id: str) -> Report | None:
 
 # ---- Chat -------------------------------------------------------------------
 async def add_message(
-    db: AsyncSession, session_id: str, *, role: str, content: str
+    db: AsyncSession,
+    session_id: str,
+    *,
+    role: str,
+    content: str,
 ) -> ChatMessage:
     message = ChatMessage(session_id=session_id, role=role, content=content)
     db.add(message)
@@ -124,6 +136,6 @@ async def list_messages(db: AsyncSession, session_id: str) -> list[ChatMessage]:
     result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == session_id)
-        .order_by(ChatMessage.created_at.asc())
+        .order_by(ChatMessage.created_at.asc()),
     )
     return list(result.scalars().all())

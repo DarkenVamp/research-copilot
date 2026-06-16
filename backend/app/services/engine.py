@@ -1,4 +1,5 @@
-"""Compiled-graph + checkpointer lifecycle.
+"""
+Compiled-graph + checkpointer lifecycle.
 
 Owns the LangGraph checkpointer and the compiled graph. The checkpointer is what
 gives the workflow **recoverability**: every node transition is persisted under
@@ -12,6 +13,11 @@ Postgres is the production default (``AsyncPostgresSaver`` on a psycopg pool); a
 
 from __future__ import annotations
 
+import aiosqlite
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 from sqlalchemy.engine import make_url
 
 from app.config import settings
@@ -24,9 +30,9 @@ logger = get_logger("app.services.engine")
 class Engine:
     def __init__(self) -> None:
         self.graph = None
-        self.saver = None
-        self._pool = None
-        self._sqlite_conn = None
+        self.saver: AsyncPostgresSaver | AsyncSqliteSaver | None = None
+        self._pool: AsyncConnectionPool | None = None
+        self._sqlite_conn: aiosqlite.Connection | None = None
 
     async def startup(self) -> None:
         url = make_url(settings.database_url)
@@ -37,30 +43,28 @@ class Engine:
         elif backend == "sqlite":
             await self._start_sqlite(url.database or ":memory:")
         else:
-            raise RuntimeError(f"Unsupported database backend: {backend}")
+            msg = f"Unsupported database backend: {backend}"
+            raise RuntimeError(msg)
 
         self.graph = build_graph(self.saver)
         logger.info("graph engine ready", extra={"ctx_backend": backend})
 
     async def _start_postgres(self) -> None:
-        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-        from psycopg.rows import dict_row
-        from psycopg_pool import AsyncConnectionPool
-
         self._pool = AsyncConnectionPool(
             conninfo=settings.checkpointer_dsn,
             max_size=10,
             open=False,
-            kwargs={"autocommit": True, "row_factory": dict_row, "prepare_threshold": 0},
+            kwargs={
+                "autocommit": True,
+                "row_factory": dict_row,
+                "prepare_threshold": 0,
+            },
         )
         await self._pool.open(wait=True)
         self.saver = AsyncPostgresSaver(self._pool)
         await self.saver.setup()  # idempotent: creates checkpoint tables
 
     async def _start_sqlite(self, path: str) -> None:
-        import aiosqlite
-        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
         self._sqlite_conn = await aiosqlite.connect(path)
         self.saver = AsyncSqliteSaver(self._sqlite_conn)
         await self.saver.setup()

@@ -1,4 +1,5 @@
-"""Follow-up chat grounded in a completed report.
+"""
+Follow-up chat grounded in a completed report.
 
 Kept intentionally lightweight: the report is small and bounded, so it is passed
 directly as grounding context rather than running a retrieval index. Answers are
@@ -39,12 +40,12 @@ def render_report_context(report: dict) -> str:
             section("Outreach Strategy", report.get("outreach_strategy")),
             section("Unknowns", report.get("unknowns")),
             section("Sources", report.get("sources")),
-        ]
+        ],
     )
 
 
 async def answer_followup(
-    report: dict, history: list[dict], question: str
+    report: dict, history: list[dict], question: str,
 ) -> str:
     """Answer a follow-up question using only the report as context."""
     context = render_report_context(report)

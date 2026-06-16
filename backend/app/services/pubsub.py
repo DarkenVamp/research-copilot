@@ -1,4 +1,5 @@
-"""In-process pub/sub for streaming workflow events to SSE subscribers.
+"""
+In-process pub/sub for streaming workflow events to SSE subscribers.
 
 A single backend process is assumed (fine for this assignment). Scaling to
 multiple workers would swap this for Redis pub/sub or Postgres LISTEN/NOTIFY

@@ -1,4 +1,5 @@
-"""Shared graph state.
+"""
+Shared graph state.
 
 Every node reads from and writes to this single typed object. List fields use the
 `add` reducer so nodes can append (findings/sources accumulate across the

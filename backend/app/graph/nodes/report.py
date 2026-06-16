@@ -9,7 +9,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.config import settings
 from app.graph import mock, prompts
 from app.graph.llm import get_chat
-from app.graph.state import ResearchState
+from app.graph.state import (
+    ResearchState,  # noqa: TC001 - used as a runtime-cheap annotation
+)
 from app.graph.util import dedupe_sources
 from app.logging_config import get_logger
 from app.schemas.report import ResearchReport, Source
@@ -36,9 +38,9 @@ async def report_node(state: ResearchState) -> dict:
                             company_name=company,
                             objective=objective,
                             analysis=json.dumps(analysis, indent=2),
-                        )
+                        ),
                     ),
-                ]
+                ],
             )
             # Sources are authoritative from research — never trust model-invented ones.
             report.sources = [Source(**s) for s in sources]

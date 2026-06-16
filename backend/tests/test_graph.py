@@ -84,7 +84,7 @@ def test_dedupe_sources_removes_duplicate_urls():
             {"title": "b", "url": "https://x.com"},
             {"title": "c", "url": "https://y.com"},
             {"title": "d", "url": ""},
-        ]
+        ],
     )
     assert [s["url"] for s in out] == ["https://x.com", "https://y.com"]
 

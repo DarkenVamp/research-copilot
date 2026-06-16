@@ -7,7 +7,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.config import settings
 from app.graph import mock, prompts
 from app.graph.llm import get_chat
-from app.graph.state import ResearchState
+from app.graph.state import (
+    ResearchState,  # noqa: TC001 - used as a runtime-cheap annotation
+)
 from app.graph.util import format_findings
 from app.logging_config import get_logger
 from app.schemas.report import Analysis
@@ -33,9 +35,9 @@ async def analysis_node(state: ResearchState) -> dict:
                             company_name=company,
                             objective=objective,
                             findings=format_findings(findings),
-                        )
+                        ),
                     ),
-                ]
+                ],
             )
         return {"analysis": analysis.model_dump()}
     except Exception as exc:  # noqa: BLE001

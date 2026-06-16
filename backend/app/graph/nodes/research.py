@@ -1,4 +1,5 @@
-"""Research node: gather evidence via web search + website fetch.
+"""
+Research node: gather evidence via web search + website fetch.
 
 Runs twice in the worst case: the first pass works the planner's queries (plus the
 company website); subsequent passes are triggered by the quality check and target
@@ -8,7 +9,9 @@ sinks the run (failure handling + graceful degradation).
 
 from __future__ import annotations
 
-from app.graph.state import ResearchState
+from app.graph.state import (
+    ResearchState,  # noqa: TC001 - used as a runtime-cheap annotation
+)
 from app.graph.tools import fetch_url, web_search
 from app.logging_config import get_logger
 
@@ -41,9 +44,9 @@ async def research_node(state: ResearchState) -> dict:
                 {
                     "query": "company website",
                     "results": [
-                        {"title": "Company website", "url": website, "content": text}
+                        {"title": "Company website", "url": website, "content": text},
                     ],
-                }
+                },
             )
             sources.append({"title": "Company website", "url": website})
 
@@ -56,7 +59,7 @@ async def research_node(state: ResearchState) -> dict:
                     sources.append({"title": r.get("title", ""), "url": r["url"]})
         except Exception as exc:  # noqa: BLE001 - degrade, keep going
             logger.warning(
-                "search failed", extra={"ctx_query": query, "ctx_error": str(exc)}
+                "search failed", extra={"ctx_query": query, "ctx_error": str(exc)},
             )
             errors.append(f"search failed for '{query}': {exc}")
 

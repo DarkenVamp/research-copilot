@@ -1,4 +1,5 @@
-"""Structured (JSON) logging configuration.
+"""
+Structured (JSON) logging configuration.
 
 Emitting one JSON object per log line makes the backend's output greppable and
 ready for ingestion by any log aggregator in a real deployment.

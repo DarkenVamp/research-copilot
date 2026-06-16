@@ -38,17 +38,17 @@ class ResearchSession(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
+        server_default=func.now(), onupdate=func.now(),
     )
 
     report: Mapped[Report | None] = relationship(
-        back_populates="session", uselist=False, cascade="all, delete-orphan"
+        back_populates="session", uselist=False, cascade="all, delete-orphan",
     )
     events: Mapped[list[WorkflowEvent]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade="all, delete-orphan",
     )
     messages: Mapped[list[ChatMessage]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade="all, delete-orphan",
     )
 
 
@@ -57,7 +57,7 @@ class Report(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     session_id: Mapped[str] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), unique=True, index=True
+        ForeignKey("sessions.id", ondelete="CASCADE"), unique=True, index=True,
     )
     # The full structured report (all required sections + sources).
     content: Mapped[dict] = mapped_column(JSONType)
@@ -73,7 +73,7 @@ class WorkflowEvent(Base):
     # across Postgres and SQLite (unlike a separate autoincrement column).
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     session_id: Mapped[str] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), index=True
+        ForeignKey("sessions.id", ondelete="CASCADE"), index=True,
     )
     node: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(32))  # running | completed | failed
@@ -90,7 +90,7 @@ class ChatMessage(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     session_id: Mapped[str] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), index=True
+        ForeignKey("sessions.id", ondelete="CASCADE"), index=True,
     )
     role: Mapped[str] = mapped_column(String(16))  # user | assistant
     content: Mapped[str] = mapped_column(Text)

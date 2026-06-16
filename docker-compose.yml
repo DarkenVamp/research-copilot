@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector on Postgres 18 (Debian trixie). PG18 stores its cluster at
+    # /var/lib/postgresql (not /var/lib/postgresql/data), so the volume mounts there.
+    image: pgvector/pgvector:pg18-trixie
     environment:
       POSTGRES_USER: copilot
       POSTGRES_PASSWORD: copilot
@@ -8,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U copilot -d copilot"]
       interval: 5s

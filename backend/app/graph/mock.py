@@ -1,4 +1,5 @@
-"""Deterministic mock outputs used when no OpenAI key is configured.
+"""
+Deterministic mock outputs used when no OpenAI key is configured.
 
 This keeps the entire graph — including the conditional retry loop — runnable and
 testable with zero external dependencies. The first quality check intentionally
@@ -16,7 +17,7 @@ from app.schemas.report import (
 )
 
 
-def mock_plan(company: str, website: str | None, objective: str) -> ResearchPlan:
+def mock_plan(company: str, objective: str) -> ResearchPlan:
     return ResearchPlan(
         focus_areas=[
             "Company overview and positioning",
@@ -71,7 +72,9 @@ def mock_quality(retries: int, threshold: float) -> QualityAssessment:
         return QualityAssessment(
             score=round(threshold - 0.2, 2),
             passed=False,
-            issues=["Findings are thin; needs more grounding on customers and signals."],
+            issues=[
+                "Findings are thin; needs more grounding on customers and signals.",
+            ],
             gaps_to_research=[
                 "customer testimonials",
                 "recent funding or revenue",
@@ -86,7 +89,10 @@ def mock_quality(retries: int, threshold: float) -> QualityAssessment:
 
 
 def mock_report(
-    company: str, objective: str, analysis: dict, sources: list[dict]
+    company: str,
+    objective: str,
+    analysis: dict,
+    sources: list[dict],
 ) -> ResearchReport:
     return ResearchReport(
         company_overview=analysis.get("company_overview", ""),

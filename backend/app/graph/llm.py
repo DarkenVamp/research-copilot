@@ -1,4 +1,5 @@
-"""LLM factory.
+"""
+LLM factory.
 
 Centralises model selection so nodes never construct a client directly. Two
 tiers are exposed: the main model for synthesis-heavy nodes and a cheaper/faster
@@ -13,7 +14,8 @@ from app.config import settings
 
 
 def get_chat(*, fast: bool = False, temperature: float = 0.2) -> ChatOpenAI:
-    """Return a configured ChatOpenAI client.
+    """
+    Return a configured ChatOpenAI client.
 
     Only called when ``settings.mock_mode`` is False — mock mode bypasses the LLM
     entirely (see app.graph.mock), so no API key is required to run the graph.
