@@ -89,28 +89,28 @@ docker compose up --build
 - Web app: http://localhost:5173
 - API docs: http://localhost:8000/docs
 
-## Quick start (local dev, no Docker)
+## Quick start (local dev)
 
-You need a reachable PostgreSQL **or** use SQLite for zero setup.
+Run Postgres in Docker, then the backend and frontend on the host:
 
 ```bash
-# 1. Backend
+# 1. Postgres (PG18 + pgvector)
+docker compose up -d postgres
+
+# 2. Backend
 cd backend
 uv sync --extra dev
 cp .env.example .env            # add OPENAI_API_KEY / TAVILY_API_KEY for real research
-
-# Easiest: SQLite (no DB server needed) — or point DATABASE_URL at Postgres
-echo 'DATABASE_URL=sqlite+aiosqlite:///./dev.db' >> .env
-
 uv run uvicorn app.main:app --reload   # http://localhost:8000
 
-# 2. Frontend (separate terminal)
+# 3. Frontend (separate terminal)
 cd frontend
 npm install
 npm run dev                            # http://localhost:5173 (proxies /api → :8000)
 ```
 
-With no `OPENAI_API_KEY`, the workflow runs in **mock mode** end-to-end.
+With no `OPENAI_API_KEY`, the workflow runs in **mock mode** end-to-end (it still
+needs Postgres for persistence).
 
 ---
 
@@ -124,7 +124,7 @@ Backend settings (see [`backend/.env.example`](backend/.env.example)):
 | `OPENAI_MODEL`         | `gpt-4o`                                              | Synthesis nodes |
 | `OPENAI_FAST_MODEL`    | `gpt-4o-mini`                                         | Routing / quality judge |
 | `TAVILY_API_KEY`       | _(empty)_                                             | Empty ⇒ mock search |
-| `DATABASE_URL`         | `postgresql+psycopg://copilot:copilot@localhost:5432/copilot` | `sqlite+aiosqlite:///./dev.db` also supported |
+| `DATABASE_URL`         | `postgresql+psycopg://copilot:copilot@localhost:5432/copilot` | psycopg3 driver; checkpointer DSN derived from it |
 | `QUALITY_THRESHOLD`    | `0.7`                                                | Min quality score to finalize |
 | `MAX_RESEARCH_RETRIES` | `2`                                                  | Retry-loop cap |
 | `CORS_ORIGINS`         | `["http://localhost:5173", ...]`                     | JSON list |
@@ -168,7 +168,8 @@ docker-compose.yml
 
 ```bash
 cd backend
-uv run pytest        # graph + end-to-end API tests (no external services needed)
+uv run pytest        # graph + end-to-end API tests (spins up an ephemeral
+                     # Postgres via testcontainers — needs a running Docker daemon)
 uv run ruff check .  # lint
 
 cd ../frontend
@@ -180,8 +181,8 @@ npm run build
 
 ## Notes & limitations
 
-- Docker is the simplest path for the Postgres default; SQLite makes local runs
-  and CI zero-setup.
+- Postgres is the single datastore (app data + LangGraph checkpoints); Docker is
+  required to run it locally and for the test suite (testcontainers).
 - Mock mode is deterministic by design (the first quality check intentionally
   fails once to demonstrate the retry loop).
 - Further productionization ideas are in

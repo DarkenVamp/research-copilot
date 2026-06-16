@@ -1,24 +1,28 @@
 """Test configuration.
 
-Points the app at a throwaway SQLite database and forces mock mode (no API keys)
-so the whole stack — graph, persistence, and HTTP API — is exercised with zero
-external dependencies. Environment is set before any app module is imported so the
-cached Settings pick it up.
+Spins up an ephemeral Postgres (via testcontainers) for the whole test session
+and points the app at it, with mock mode forced (no API keys). Using real
+Postgres means the tests exercise the JSONB columns and the AsyncPostgresSaver
+checkpointer exactly as in production. The container is started before any app
+module is imported so the cached Settings pick up DATABASE_URL.
+
+Requires a running Docker daemon.
 """
 
 from __future__ import annotations
 
 import os
-import pathlib
 
-_TEST_DB = pathlib.Path(__file__).parent / "test.db"
+from testcontainers.postgres import PostgresContainer
 
-os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_TEST_DB}"
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["TAVILY_API_KEY"] = ""
 
-# Start from a clean database each test session.
-for _suffix in ("", "-wal", "-shm"):
-    _p = pathlib.Path(str(_TEST_DB) + _suffix)
-    if _p.exists():
-        _p.unlink()
+# Match the production image (PG18 + pgvector) so behaviour is identical.
+_postgres = PostgresContainer("pgvector/pgvector:pg18-trixie", driver="psycopg")
+_postgres.start()
+os.environ["DATABASE_URL"] = _postgres.get_connection_url()
+
+
+def pytest_unconfigure(config) -> None:
+    _postgres.stop()

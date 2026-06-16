@@ -70,19 +70,19 @@ After `quality_check`, `route_after_quality` returns:
 
 - Each node wraps its LLM/tool work in `try/except`, appends to `state.errors`,
   and **degrades** to a deterministic fallback rather than crashing the run.
-- The graph is compiled with a checkpointer (`AsyncPostgresSaver`, or
-  `AsyncSqliteSaver` in dev). Every super-step is persisted under
-  `thread_id = session_id`. `POST /resume` calls the graph with `None` input,
-  which continues from the last checkpoint.
+- The graph is compiled with an `AsyncPostgresSaver` checkpointer. Every
+  super-step is persisted under `thread_id = session_id`. `POST /resume` calls
+  the graph with `None` input, which continues from the last checkpoint.
 
 ## Persistence (`app/db/`)
 
-- **Application data** via async SQLAlchemy: `sessions`, `reports`,
-  `workflow_events`, `chat_messages`. JSON columns use `JSONB` on Postgres and
-  fall back to generic `JSON` on SQLite via a typed variant.
-- **Graph checkpoints** in a separate set of LangGraph-managed tables.
-- The dialect is chosen from `DATABASE_URL`: Postgres in production/Docker,
-  SQLite for zero-setup local dev and tests.
+- **Application data** via async SQLAlchemy (psycopg3 driver): `sessions`,
+  `reports`, `workflow_events`, `chat_messages`. JSON payloads use `JSONB`.
+- **Graph checkpoints** in a separate set of LangGraph-managed tables, on a
+  dedicated psycopg connection pool.
+- Single datastore: Postgres (PG18 + pgvector) everywhere — production, local
+  dev (`docker compose up postgres`), and tests (an ephemeral Postgres via
+  testcontainers). No second dialect to keep in sync.
 
 ## Streaming design
 

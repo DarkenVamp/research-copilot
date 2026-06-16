@@ -5,15 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import JSON, ForeignKey, Integer, String, Text, func
+from sqlalchemy import ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
-
-# Use JSONB on Postgres (indexable, efficient) and fall back to generic JSON on
-# SQLite so the same models run in dev/test without a Postgres server.
-JSONType = JSON().with_variant(JSONB(), "postgresql")
 
 
 def _uuid() -> str:
@@ -60,7 +56,7 @@ class Report(Base):
         ForeignKey("sessions.id", ondelete="CASCADE"), unique=True, index=True,
     )
     # The full structured report (all required sections + sources).
-    content: Mapped[dict] = mapped_column(JSONType)
+    content: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     session: Mapped[ResearchSession] = relationship(back_populates="report")
@@ -69,8 +65,8 @@ class Report(Base):
 class WorkflowEvent(Base):
     __tablename__ = "workflow_events"
 
-    # Integer autoincrement PK doubles as the strict insertion order — portable
-    # across Postgres and SQLite (unlike a separate autoincrement column).
+    # Integer autoincrement PK doubles as the strict insertion order for the SSE
+    # replay/dedupe logic.
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     session_id: Mapped[str] = mapped_column(
         ForeignKey("sessions.id", ondelete="CASCADE"), index=True,
@@ -79,7 +75,7 @@ class WorkflowEvent(Base):
     status: Mapped[str] = mapped_column(String(32))  # running | completed | failed
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Intermediate output produced by the node (kept small / summarised).
-    data: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     session: Mapped[ResearchSession] = relationship(back_populates="events")

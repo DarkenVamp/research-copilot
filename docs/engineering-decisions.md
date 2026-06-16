@@ -35,22 +35,24 @@ machinery we don't need; polling is simpler still but trades latency and wasted
 requests. The cost of SSE here is the single-process pub/sub assumption (see
 risks), which is acceptable for the assignment and has a clear scale-out path.
 
-## 3. PostgreSQL as the default, with a SQLite fallback for dev/test
+## 3. PostgreSQL everywhere; testcontainers for tests
 
-**Decision.** Postgres is the production default (app data + graph checkpoints,
-via docker-compose). The persistence layer is dialect-portable, so a
-`sqlite+aiosqlite` `DATABASE_URL` runs the entire stack with zero setup.
+**Decision.** A single datastore — Postgres (PG18 + pgvector) — for application
+data *and* LangGraph checkpoints, in production, local dev (`docker compose up
+postgres`), and tests. The suite provisions an ephemeral Postgres via
+`testcontainers`, so `pytest` runs against the real engine.
 
 **Alternatives considered.**
-- Postgres only.
-- SQLite only.
+- A SQLite dev/test fallback with a dialect-portable persistence layer.
+- Mocking the database in tests.
 
-**Trade-offs.** Supporting two dialects cost a little care — a `JSONB`/`JSON`
-typed variant and a portable integer-autoincrement ordering key instead of a
-Postgres sequence. The payoff is large: the same code runs in production on
-Postgres and runs in CI, tests, and a laptop with no database server at all.
-Postgres alone would block local runs without Docker; SQLite alone would be a
-weak "production" story and lose `JSONB`/concurrency.
+**Trade-offs.** Postgres-only adds a hard dependency: running anything — including
+the tests — now requires a Docker daemon. In return the code has one path (no
+`JSONB`/`JSON` type variant, no dialect branch in the engine, two fewer deps) and
+the tests exercise exactly what production runs — real `JSONB` behaviour and the
+`AsyncPostgresSaver` checkpointer, which a SQLite stand-in cannot validate. Given
+the product targets Postgres, fidelity and a single code path beat zero-setup
+tests; testcontainers keeps `pytest` to one command despite the new dependency.
 
 ---
 
