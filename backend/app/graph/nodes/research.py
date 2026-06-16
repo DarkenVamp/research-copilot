@@ -23,8 +23,7 @@ async def research_node(state: ResearchState) -> dict:
     quality = state.get("quality")
     retries = state.get("retries", 0)
 
-    is_followup = bool(quality) and not quality.get("passed", False)
-    if is_followup:
+    if is_followup := (quality and not quality.get("passed", False)):
         queries = quality.get("gaps_to_research") or plan.get("search_queries", [])
         new_retries = retries + 1
     else:

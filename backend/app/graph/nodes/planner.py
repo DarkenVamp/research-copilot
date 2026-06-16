@@ -26,7 +26,7 @@ async def planner_node(state: ResearchState) -> dict:
             plan = mock.mock_plan(company, objective)
         else:
             llm = get_chat().with_structured_output(ResearchPlan)
-            plan = await llm.ainvoke(
+            plan = await llm.ainvoke(  # type: ignore[assignment] # Using structured output
                 [
                     SystemMessage(content=prompts.PLANNER_SYSTEM),
                     HumanMessage(

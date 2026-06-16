@@ -27,7 +27,7 @@ async def analysis_node(state: ResearchState) -> dict:
             analysis = mock.mock_analysis(company, objective, findings)
         else:
             llm = get_chat().with_structured_output(Analysis)
-            analysis = await llm.ainvoke(
+            analysis = await llm.ainvoke(  # type: ignore[assignment] # Using structured output
                 [
                     SystemMessage(content=prompts.ANALYSIS_SYSTEM),
                     HumanMessage(

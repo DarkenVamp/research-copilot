@@ -36,7 +36,7 @@ async def quality_node(state: ResearchState) -> dict:
             )
         else:
             llm = get_chat(fast=True).with_structured_output(QualityAssessment)
-            qa = await llm.ainvoke(
+            qa = await llm.ainvoke(  # type: ignore[assignment] # Using structured output
                 [
                     SystemMessage(content=prompts.QUALITY_SYSTEM),
                     HumanMessage(

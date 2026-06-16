@@ -30,7 +30,7 @@ async def report_node(state: ResearchState) -> dict:
             report = mock.mock_report(company, objective, analysis, sources)
         else:
             llm = get_chat().with_structured_output(ResearchReport)
-            report = await llm.ainvoke(
+            report = await llm.ainvoke(  # type: ignore[assignment] # Using structured output
                 [
                     SystemMessage(content=prompts.REPORT_SYSTEM),
                     HumanMessage(
