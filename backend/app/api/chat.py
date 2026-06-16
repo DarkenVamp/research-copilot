@@ -24,7 +24,9 @@ async def list_messages(session_id: str, db: DbSession) -> list[ChatMessageRead]
 
 @router.post("/sessions/{session_id}/chat", response_model=ChatResponse)
 async def chat(
-    session_id: str, payload: ChatRequest, db: DbSession,
+    session_id: str,
+    payload: ChatRequest,
+    db: DbSession,
 ) -> ChatResponse:
     if await repo.get_session(db, session_id) is None:
         raise HTTPException(status_code=404, detail="Session not found")

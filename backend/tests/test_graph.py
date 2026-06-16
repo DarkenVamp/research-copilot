@@ -63,12 +63,15 @@ async def test_workflow_runs_full_pipeline_with_retry_loop(graph):
 
 
 def test_router_passes_to_report_when_quality_ok():
-    assert route_after_quality({"quality": {"passed": True}, "retries": 0}) == NODE_REPORT
+    assert (
+        route_after_quality({"quality": {"passed": True}, "retries": 0}) == NODE_REPORT
+    )
 
 
 def test_router_loops_back_when_quality_fails_with_retries_left():
     assert (
-        route_after_quality({"quality": {"passed": False}, "retries": 0}) == NODE_RESEARCH
+        route_after_quality({"quality": {"passed": False}, "retries": 0})
+        == NODE_RESEARCH
     )
 
 

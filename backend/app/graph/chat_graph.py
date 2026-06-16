@@ -45,7 +45,9 @@ def render_report_context(report: dict) -> str:
 
 
 async def answer_followup(
-    report: dict, history: list[dict], question: str,
+    report: dict,
+    history: list[dict],
+    question: str,
 ) -> str:
     """Answer a follow-up question using only the report as context."""
     context = render_report_context(report)
@@ -59,7 +61,7 @@ async def answer_followup(
             f"captured is listed under Unknowns."
         )
 
-    messages = [
+    messages: list[SystemMessage | AIMessage | HumanMessage] = [
         SystemMessage(content=prompts.CHAT_SYSTEM),
         SystemMessage(content=f"RESEARCH REPORT CONTEXT:\n{context}"),
     ]

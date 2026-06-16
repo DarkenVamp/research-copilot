@@ -11,6 +11,7 @@ dedicated psycopg connection pool.
 from __future__ import annotations
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.graph.state import CompiledStateGraph
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
@@ -23,9 +24,15 @@ logger = get_logger("app.services.engine")
 
 class Engine:
     def __init__(self) -> None:
-        self.graph = None
+        self._graph: CompiledStateGraph | None = None
         self.saver: AsyncPostgresSaver | None = None
         self._pool: AsyncConnectionPool | None = None
+
+    @property
+    def graph(self) -> CompiledStateGraph:
+        if not self._graph:
+            raise ValueError("Graph Not Compiled")
+        return self._graph
 
     async def startup(self) -> None:
         self._pool = AsyncConnectionPool(
@@ -39,9 +46,9 @@ class Engine:
             },
         )
         await self._pool.open(wait=True)
-        self.saver = AsyncPostgresSaver(self._pool)
+        self.saver = AsyncPostgresSaver(self._pool)  # type: ignore[arg-type] # AsyncConnectionPool is allowed
         await self.saver.setup()  # idempotent: creates checkpoint tables
-        self.graph = build_graph(self.saver)
+        self._graph = build_graph(self.saver)
         logger.info("graph engine ready")
 
     async def shutdown(self) -> None:

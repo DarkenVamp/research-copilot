@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,12 +26,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # LLM (OpenAI)
-    openai_api_key: str = ""
+    openai_api_key: SecretStr = SecretStr("")
     openai_model: str = "gpt-4o"
     openai_fast_model: str = "gpt-4o-mini"
 
     # Web research (Tavily)
-    tavily_api_key: str = ""
+    tavily_api_key: SecretStr = SecretStr("")
     tavily_max_results: int = 5
 
     # Database

@@ -14,6 +14,7 @@ Postgres saver (production / app runtime) or an in-memory saver (tests).
 from __future__ import annotations
 
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Checkpointer
 
 from app.graph.nodes import (
     analysis_node,
@@ -33,7 +34,7 @@ from app.graph.state import (
 )
 
 
-def build_graph(checkpointer):
+def build_graph(checkpointer: Checkpointer):
     graph = StateGraph(ResearchState)
 
     graph.add_node(NODE_PLANNER, planner_node)

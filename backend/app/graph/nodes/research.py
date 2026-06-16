@@ -59,7 +59,8 @@ async def research_node(state: ResearchState) -> dict:
                     sources.append({"title": r.get("title", ""), "url": r["url"]})
         except Exception as exc:  # noqa: BLE001 - degrade, keep going
             logger.warning(
-                "search failed", extra={"query": query, "error": str(exc)},
+                "search failed",
+                extra={"query": query, "error": str(exc)},
             )
             errors.append(f"search failed for '{query}': {exc}")
 

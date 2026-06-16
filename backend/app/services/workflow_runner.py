@@ -76,11 +76,12 @@ async def run_workflow(session_id: str, *, resume: bool = False) -> None:
         session = await repo.get_session(db, session_id)
         if session is None:
             logger.warning(
-                "run requested for missing session", extra={"session": session_id},
+                "run requested for missing session",
+                extra={"session": session_id},
             )
             return
 
-        graph_input = (
+        graph_input: dict | None = (
             None
             if resume
             else {
@@ -100,7 +101,7 @@ async def run_workflow(session_id: str, *, resume: bool = False) -> None:
 
         final_report: dict | None = None
         try:
-            async for chunk in engine.graph.astream(
+            async for chunk in engine.graph.astream(  # type: ignore[call-overload] # Input and config are valid
                 graph_input,
                 config,
                 stream_mode="updates",
@@ -135,14 +136,18 @@ async def run_workflow(session_id: str, *, resume: bool = False) -> None:
                 await repo.upsert_report(db, session_id, final_report)
             await repo.update_session_status(db, session_id, STATUS_COMPLETED)
             await pubsub.publish(
-                session_id, {"type": "done", "status": STATUS_COMPLETED},
+                session_id,
+                {"type": "done", "status": STATUS_COMPLETED},
             )
             logger.info("workflow completed", extra={"session": session_id})
 
         except Exception as exc:
             logger.exception("workflow failed", extra={"session": session_id})
             await repo.update_session_status(
-                db, session_id, STATUS_FAILED, error=str(exc),
+                db,
+                session_id,
+                STATUS_FAILED,
+                error=str(exc),
             )
             await repo.add_event(
                 db,
