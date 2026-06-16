@@ -78,20 +78,23 @@ async function streamChat(
   const decoder = new TextDecoder();
   let buffer = "";
 
+  // SSE frames are separated by a blank line and fields by a single break, but
+  // the terminator may be LF or CRLF (sse_starlette emits CRLF) — match either.
+  const FRAME_BOUNDARY = /\r?\n\r?\n/;
+
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    // SSE frames are separated by a blank line.
-    let sep: number;
-    while ((sep = buffer.indexOf("\n\n")) !== -1) {
-      const frame = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
+    let m: RegExpExecArray | null;
+    while ((m = FRAME_BOUNDARY.exec(buffer)) !== null) {
+      const frame = buffer.slice(0, m.index);
+      buffer = buffer.slice(m.index + m[0].length);
 
       let event = "message";
       const dataLines: string[] = [];
-      for (const line of frame.split("\n")) {
+      for (const line of frame.split(/\r?\n/)) {
         if (line.startsWith(":")) continue; // comment / keepalive
         if (line.startsWith("event:")) event = line.slice(6).trim();
         else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
