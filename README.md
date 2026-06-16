@@ -158,7 +158,7 @@ uv run alembic downgrade -1                         # roll back one
 | POST   | `/api/sessions/{id}/resume`       | Resume from last checkpoint |
 | GET    | `/api/sessions/{id}/stream`       | **SSE** live progress |
 | GET    | `/api/sessions/{id}/events`       | Persisted workflow events |
-| POST   | `/api/sessions/{id}/chat`         | Ask a follow-up |
+| POST   | `/api/sessions/{id}/chat`         | Ask a follow-up (**SSE** token stream) |
 | GET    | `/api/sessions/{id}/messages`     | Chat history |
 | GET    | `/health`                         | Health + mode |
 

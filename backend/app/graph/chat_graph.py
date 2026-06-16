@@ -8,11 +8,17 @@ constrained to the report to avoid the model inventing facts.
 
 from __future__ import annotations
 
+import asyncio
+from typing import TYPE_CHECKING
+
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from app.config import settings
 from app.graph import prompts
 from app.graph.llm import get_chat
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 def render_report_context(report: dict) -> str:
@@ -44,23 +50,21 @@ def render_report_context(report: dict) -> str:
     )
 
 
-async def answer_followup(
-    report: dict,
+def _mock_answer(report: dict, question: str) -> str:
+    overview = report.get("company_overview", "the company")
+    return (
+        f"[mock answer] Based on the report: {overview} "
+        f"Regarding '{question}', the briefing's relevant sections cover products, "
+        f"customers, signals, and recommended discovery questions. Anything not "
+        f"captured is listed under Unknowns."
+    )
+
+
+def _build_messages(
+    context: str,
     history: list[dict],
     question: str,
-) -> str:
-    """Answer a follow-up question using only the report as context."""
-    context = render_report_context(report)
-
-    if settings.mock_mode:
-        overview = report.get("company_overview", "the company")
-        return (
-            f"[mock answer] Based on the report: {overview} "
-            f"Regarding '{question}', the briefing's relevant sections cover products, "
-            f"customers, signals, and recommended discovery questions. Anything not "
-            f"captured is listed under Unknowns."
-        )
-
+) -> list[SystemMessage | AIMessage | HumanMessage]:
     messages: list[SystemMessage | AIMessage | HumanMessage] = [
         SystemMessage(content=prompts.CHAT_SYSTEM),
         SystemMessage(content=f"RESEARCH REPORT CONTEXT:\n{context}"),
@@ -71,7 +75,31 @@ async def answer_followup(
         else:
             messages.append(AIMessage(content=turn["content"]))
     messages.append(HumanMessage(content=question))
+    return messages
+
+
+async def astream_followup(
+    report: dict,
+    history: list[dict],
+    question: str,
+) -> AsyncIterator[str]:
+    """
+    Stream a follow-up answer token-by-token, grounded only in the report.
+
+    Yields text deltas; concatenating every delta reproduces the full answer.
+    Mock mode emits the canned answer in small slices so the streaming UX (and
+    its tests) behave the same without an API key.
+    """
+    context = render_report_context(report)
+
+    if settings.mock_mode:
+        answer = _mock_answer(report, question)
+        for i in range(0, len(answer), 4):
+            await asyncio.sleep(0.01)
+            yield answer[i : i + 4]
+        return
 
     llm = get_chat(fast=True, temperature=0.3)
-    resp = await llm.ainvoke(messages)
-    return resp.content if isinstance(resp.content, str) else str(resp.content)
+    async for chunk in llm.astream(_build_messages(context, history, question)):
+        if text := chunk.text:
+            yield text

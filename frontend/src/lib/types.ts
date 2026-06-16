@@ -47,8 +47,3 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
-
-export interface ChatResponse {
-  answer: string;
-  history: ChatMessage[];
-}

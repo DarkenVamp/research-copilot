@@ -2,11 +2,29 @@
 
 from __future__ import annotations
 
+import json
 import time
 
 from fastapi.testclient import TestClient
 
 from app.main import app
+
+
+def _parse_sse(body: str) -> list[dict[str, str]]:
+    """Parse a buffered text/event-stream body into a list of {event, data}."""
+    events: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in body.splitlines():
+        if line.startswith("event:"):
+            current["event"] = line[len("event:") :].strip()
+        elif line.startswith("data:"):
+            current["data"] = line[len("data:") :].strip()
+        elif line == "" and current:
+            events.append(current)
+            current = {}
+    if current:
+        events.append(current)
+    return events
 
 
 def _wait_until_done(client: TestClient, sid: str, timeout: float = 20.0) -> dict:
@@ -53,10 +71,21 @@ def test_full_session_flow():
         assert "planner" in nodes
         assert "report" in nodes
 
-        # Follow-up chat works and persists both turns.
+        # Follow-up chat streams the answer over SSE and persists both turns.
         chat = client.post(f"/api/sessions/{sid}/chat", json={"message": "Hello?"})
         assert chat.status_code == 200
-        assert len(chat.json()["history"]) == 2
+        assert chat.headers["content-type"].startswith("text/event-stream")
+        events = _parse_sse(chat.text)
+        deltas = [e for e in events if e.get("event") == "delta"]
+        done = [e for e in events if e.get("event") == "done"]
+        assert deltas, "expected streamed delta events"
+        assert done, "expected a terminal done event"
+        # Concatenated deltas reproduce the persisted answer.
+        streamed = "".join(json.loads(e["data"])["text"] for e in deltas)
+        assert json.loads(done[0]["data"])["content"] == streamed
+
+        messages = client.get(f"/api/sessions/{sid}/messages").json()
+        assert len(messages) == 2
 
 
 def test_validation_error_returns_422():

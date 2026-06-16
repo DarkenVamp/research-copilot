@@ -60,11 +60,3 @@ export function useMessages(id: string, enabled: boolean) {
     enabled: enabled && !!id,
   });
 }
-
-export function useSendChat(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (message: string) => api.sendChat(id, message),
-    onSuccess: () => qc.invalidateQueries({ queryKey: sessionKeys.messages(id) }),
-  });
-}

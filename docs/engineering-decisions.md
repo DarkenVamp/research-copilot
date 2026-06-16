@@ -35,6 +35,12 @@ machinery we don't need; polling is simpler still but trades latency and wasted
 requests. The cost of SSE here is the single-process pub/sub assumption (see
 risks), which is acceptable for the assignment and has a clear scale-out path.
 
+The follow-up chat reuses SSE for the same reason: answers stream back
+token-by-token (`delta` events, then `done`) instead of arriving all at once.
+Because the question is sent in the request body, the client reads the stream
+with `fetch` + a `ReadableStream` reader rather than `EventSource` (which is
+GET-only) — the only place we hand-parse SSE frames.
+
 ## 3. PostgreSQL everywhere; testcontainers for tests
 
 **Decision.** A single datastore — Postgres (PG18 + pgvector) — for application

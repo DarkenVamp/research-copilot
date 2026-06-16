@@ -58,11 +58,6 @@ class ChatMessageRead(BaseModel):
     created_at: datetime
 
 
-class ChatResponse(BaseModel):
-    answer: str
-    history: list[ChatMessageRead]
-
-
 class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None

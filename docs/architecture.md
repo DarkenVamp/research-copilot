@@ -33,7 +33,8 @@ checkpoints. External capability comes from OpenAI (LLM) and Tavily (web search)
 5. **Report** — when the `report` node emits, the runner stores the structured
    report and marks the session `completed`.
 6. **Chat** — `POST /api/sessions/{id}/chat` answers follow-ups grounded only in
-   the stored report; turns are persisted.
+   the stored report, **streaming the answer token-by-token over SSE** (`delta`
+   events, then a terminal `done`); both turns are persisted.
 
 ## The LangGraph workflow
 
