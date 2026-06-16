@@ -5,22 +5,22 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Coroutine
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from app.db import repository as repo
-from app.db.database import get_db
+from app.db.database import (
+    DbSession,  # noqa: TC001 - runtime import: FastAPI resolves the dependency
+)
 from app.db.models import STATUS_COMPLETED, STATUS_FAILED, STATUS_RUNNING
 from app.schemas.api import WorkflowEventRead
 from app.services.pubsub import pubsub
 from app.services.workflow_runner import run_workflow
 
 router = APIRouter(tags=["workflow"])
-
-DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 _TERMINAL = {"done", "error"}
 

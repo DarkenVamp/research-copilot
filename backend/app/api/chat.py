@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException
 
 from app.db import repository as repo
-from app.db.database import get_db
+from app.db.database import (
+    DbSession,  # noqa: TC001 - runtime import: FastAPI resolves the dependency
+)
 from app.graph.chat_graph import answer_followup
 from app.schemas.api import ChatMessageRead, ChatRequest, ChatResponse
 
 router = APIRouter(tags=["chat"])
-
-DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
 @router.get("/sessions/{session_id}/messages", response_model=list[ChatMessageRead])

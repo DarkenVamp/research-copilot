@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException
 
 from app.db import repository as repo
-from app.db.database import get_db
+from app.db.database import (
+    DbSession,  # noqa: TC001 - runtime import: FastAPI resolves the dependency
+)
 from app.schemas.api import SessionCreate, SessionDetail, SessionRead
 from app.schemas.report import ResearchReport
 
 router = APIRouter(tags=["sessions"])
-
-DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
 @router.post("/sessions", response_model=SessionRead, status_code=201)

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -58,3 +60,7 @@ async def get_db() -> AsyncIterator[AsyncSession]:
         raise
     finally:
         await session.close()
+
+
+# Shared FastAPI dependency type for an injected DB session — used by all routers.
+DbSession = Annotated[AsyncSession, Depends(get_db)]
