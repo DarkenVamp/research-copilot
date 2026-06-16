@@ -1,0 +1,108 @@
+# Architecture
+
+## Overview
+
+The system has three tiers: a React SPA, a FastAPI backend that hosts the
+LangGraph workflow, and PostgreSQL for both application data and graph
+checkpoints. External capability comes from OpenAI (LLM) and Tavily (web search).
+
+```
+┌──────────────┐   HTTP + SSE    ┌──────────────────────────────┐    ┌────────────┐
+│ React (Vite) │ ───────────────▶│ FastAPI                      │───▶│ PostgreSQL │
+│              │ ◀───────────────│  api/      sessions/workflow/ │    │ app tables │
+│ stepper, UI  │  report/events  │            chat/health        │    │ + langgraph│
+└──────────────┘                 │  services/ engine, runner,    │    │ checkpoints│
+                                  │            pubsub             │    └────────────┘
+                                  │  graph/    nodes, router,     │
+                                  │            builder, tools     │──▶ OpenAI / Tavily
+                                  └──────────────────────────────┘
+```
+
+## Request / data flow
+
+1. **Create session** — `POST /api/sessions` persists a `ResearchSession`
+   (`status=created`).
+2. **Run** — `POST /api/sessions/{id}/run` schedules `run_workflow` as a
+   background task and returns immediately (202).
+3. **Execute** — `workflow_runner` streams `graph.astream(stream_mode="updates")`.
+   For each node update it (a) persists a `WorkflowEvent` and (b) publishes it to
+   an in-process **pub/sub**.
+4. **Observe** — the UI opens `GET /api/sessions/{id}/stream` (SSE). The endpoint
+   replays already-persisted events (catch-up), then tails live ones until a
+   terminal event — so it works whether the run is in-flight or already done.
+5. **Report** — when the `report` node emits, the runner stores the structured
+   report and marks the session `completed`.
+6. **Chat** — `POST /api/sessions/{id}/chat` answers follow-ups grounded only in
+   the stored report; turns are persisted.
+
+## The LangGraph workflow
+
+```
+START → planner → research → analysis → quality_check ─(passed | retries exhausted)→ report → END
+                     ▲                          │
+                     └──────── gaps (retry) ────┘
+```
+
+### Shared state (`app/graph/state.py`)
+
+A single `ResearchState` TypedDict flows through every node. List fields
+(`findings`, `sources`, `errors`) use the `add` reducer so the research retry
+loop **accumulates** evidence instead of overwriting it; scalar/dict fields
+(`plan`, `analysis`, `quality`, `report`, `retries`) overwrite.
+
+### Nodes (`app/graph/nodes/`)
+
+| Node | Responsibility | Intermediate output |
+|------|----------------|---------------------|
+| **planner** | Decompose the objective into focus areas + search queries | `ResearchPlan` |
+| **research** | Tavily search per query + website fetch; on retry, target only the identified gaps | appends `findings`, `sources` |
+| **analysis** | Synthesize findings into a structured analysis; record `unknowns` | `Analysis` |
+| **quality_check** | LLM-as-judge scores grounding/completeness; pass/fail vs. threshold | `QualityAssessment` |
+| **report** | Assemble the final briefing; attach verified sources | `ResearchReport` |
+
+### Conditional routing (`app/graph/router.py`)
+
+After `quality_check`, `route_after_quality` returns:
+- `report` if the assessment passed, **or** retries hit `MAX_RESEARCH_RETRIES`;
+- `research` otherwise — looping back to gather the specific gaps the judge named.
+
+### Failure handling & recoverability
+
+- Each node wraps its LLM/tool work in `try/except`, appends to `state.errors`,
+  and **degrades** to a deterministic fallback rather than crashing the run.
+- The graph is compiled with a checkpointer (`AsyncPostgresSaver`, or
+  `AsyncSqliteSaver` in dev). Every super-step is persisted under
+  `thread_id = session_id`. `POST /resume` calls the graph with `None` input,
+  which continues from the last checkpoint.
+
+## Persistence (`app/db/`)
+
+- **Application data** via async SQLAlchemy: `sessions`, `reports`,
+  `workflow_events`, `chat_messages`. JSON columns use `JSONB` on Postgres and
+  fall back to generic `JSON` on SQLite via a typed variant.
+- **Graph checkpoints** in a separate set of LangGraph-managed tables.
+- The dialect is chosen from `DATABASE_URL`: Postgres in production/Docker,
+  SQLite for zero-setup local dev and tests.
+
+## Streaming design
+
+A lightweight in-process `PubSub` (`app/services/pubsub.py`) fans workflow events
+out to SSE subscribers. The runner is the sole publisher; the SSE endpoint is the
+subscriber. A single-process assumption keeps it simple; scaling horizontally
+would swap the implementation for Redis pub/sub or Postgres `LISTEN/NOTIFY`
+behind the same interface, with no change to the runner or endpoint.
+
+## Configuration, logging, errors
+
+- **Config** — one typed `Settings` (pydantic-settings); no scattered `os.getenv`.
+- **Logging** — structured JSON to stdout; a middleware logs method/path/status/
+  duration per request.
+- **Errors** — exception handlers return a consistent `{error, detail}` envelope
+  for HTTP, validation, and unhandled errors.
+
+## Mock mode
+
+When `OPENAI_API_KEY` is absent, nodes use deterministic builders
+(`app/graph/mock.py`) and Tavily falls back to canned results. The first quality
+check intentionally fails once so the retry loop is always exercised. This makes
+the entire system runnable and testable with no external dependencies.
