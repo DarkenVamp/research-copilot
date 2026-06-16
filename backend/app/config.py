@@ -8,7 +8,7 @@ validated values and there are no scattered os.getenv calls.
 
 from __future__ import annotations
 
-from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "AI Research Copilot"
-    environment: str = "development"
+    environment: Literal["local", "dev", "test", "staging", "production"] = "dev"
     log_level: str = "INFO"
 
     # LLM (OpenAI)
@@ -62,9 +62,4 @@ class Settings(BaseSettings):
         return self.database_url.replace("+psycopg", "")
 
 
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
-
-
-settings = get_settings()
+settings = Settings()
