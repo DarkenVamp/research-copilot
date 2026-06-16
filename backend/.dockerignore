@@ -1,7 +1,36 @@
-.venv/
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+
+# Python cache files
 __pycache__/
-*.pyc
-.pytest_cache/
+*.py[cod]
+*$py.class
+build/
+dist/
+wheels/
+*.egg-info/
 .ruff_cache/
+.mypy_cache/
+
+# IDE/AI specific files
+.vscode/
+.claude/
+
+# Virtual environments
+.venv/
+
+# Environment variables
+.env.*
+.env/
+
+# Git
+.git
+.gitignore
+
+# Tests
 tests/
-.env
+.pytest_cache/
+
+# Scripts
+scripts/
