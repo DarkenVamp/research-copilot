@@ -1,38 +1,42 @@
 """
-Structured (JSON) logging configuration.
+Logging configuration.
 
-Emitting one JSON object per log line makes the backend's output greppable and
-ready for ingestion by any log aggregator in a real deployment.
+Deployed environments emit one JSON object per log line (via
+``python-json-logger``) so output is greppable and ready for ingestion by any log
+aggregator. Local development uses a plain, human-readable formatter instead —
+JSON is just noise when you're reading the console yourself.
 """
 
 from __future__ import annotations
 
-import json
 import logging
 import sys
-from datetime import UTC, datetime
+
+from pythonjsonlogger.json import JsonFormatter
 
 
-class JsonFormatter(logging.Formatter):
-    def format(self, record: logging.LogRecord) -> str:
-        payload: dict[str, object] = {
-            "ts": datetime.now(UTC).isoformat(),
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-        }
-        # Attach any structured extras passed via logger.info(..., extra={...}).
-        for key, value in getattr(record, "__dict__", {}).items():
-            if key.startswith("ctx_"):
-                payload[key[4:]] = value
-        if record.exc_info:
-            payload["exception"] = self.formatException(record.exc_info)
-        return json.dumps(payload, default=str)
+def _build_formatter(environment: str) -> logging.Formatter:
+    if environment == "local":
+        return logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(name)s | %(message)s",
+            datefmt="%H:%M:%S",
+        )
+    # Renamed/added fields mirror the previous hand-rolled schema
+    # (ts/level/logger/message). Any ``logger.*(..., extra={...})`` keys are
+    # appended as their own fields, and exceptions land in ``exc_info`` — the
+    # library namespaces custom fields against reserved LogRecord attributes, so
+    # extras can be passed by their plain names.
+    return JsonFormatter(
+        "{levelname}{name}{message}",
+        style="{",
+        rename_fields={"levelname": "level", "name": "logger"},
+        timestamp="ts",
+    )
 
 
-def configure_logging(level: str = "INFO") -> None:
+def configure_logging(level: str = "INFO", environment: str = "dev") -> None:
     handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(JsonFormatter())
+    handler.setFormatter(_build_formatter(environment))
 
     root = logging.getLogger()
     root.handlers.clear()

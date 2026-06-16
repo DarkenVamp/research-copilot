@@ -41,6 +41,6 @@ async def analysis_node(state: ResearchState) -> dict:
             )
         return {"analysis": analysis.model_dump()}
     except Exception as exc:  # noqa: BLE001
-        logger.warning("analysis failed, using fallback", extra={"ctx_error": str(exc)})
+        logger.warning("analysis failed, using fallback", extra={"error": str(exc)})
         fallback = mock.mock_analysis(company, objective, findings)
         return {"analysis": fallback.model_dump(), "errors": [f"analysis error: {exc}"]}

@@ -100,8 +100,9 @@ behind the same interface, with no change to the runner or endpoint.
 ## Configuration, logging, errors
 
 - **Config** — one typed `Settings` (pydantic-settings); no scattered `os.getenv`.
-- **Logging** — structured JSON to stdout; a middleware logs method/path/status/
-  duration per request.
+- **Logging** — structured JSON to stdout in deployed environments (via
+  `python-json-logger`), and plain human-readable lines when `ENVIRONMENT=local`;
+  a middleware logs method/path/status/duration per request.
 - **Errors** — exception handlers return a consistent `{error, detail}` envelope
   for HTTP, validation, and unhandled errors.
 

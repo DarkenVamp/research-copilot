@@ -27,12 +27,12 @@ logger = get_logger("app.main")
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    configure_logging(settings.log_level)
+    configure_logging(settings.log_level, settings.environment)
     logger.info(
         "starting up",
         extra={
-            "ctx_mock_mode": settings.mock_mode,
-            "ctx_real_search": settings.use_real_search,
+            "mock_mode": settings.mock_mode,
+            "real_search": settings.use_real_search,
         },
     )
     await init_db()
@@ -63,10 +63,10 @@ async def log_requests(request: Request, call_next):
     logger.info(
         "request",
         extra={
-            "ctx_method": request.method,
-            "ctx_path": request.url.path,
-            "ctx_status": response.status_code,
-            "ctx_duration_ms": duration_ms,
+            "method": request.method,
+            "path": request.url.path,
+            "status": response.status_code,
+            "duration_ms": duration_ms,
         },
     )
     return response
@@ -90,7 +90,7 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, _exc: Exception):
-    logger.exception("unhandled error", extra={"ctx_path": request.url.path})
+    logger.exception("unhandled error", extra={"path": request.url.path})
     return JSONResponse(
         status_code=500,
         content={"error": "internal_error", "detail": "An unexpected error occurred."},

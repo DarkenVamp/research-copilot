@@ -48,6 +48,6 @@ async def report_node(state: ResearchState) -> dict:
                 report.unknowns = analysis.get("unknowns", [])
         return {"report": report.model_dump()}
     except Exception as exc:  # noqa: BLE001
-        logger.warning("report failed, using fallback", extra={"ctx_error": str(exc)})
+        logger.warning("report failed, using fallback", extra={"error": str(exc)})
         fallback = mock.mock_report(company, objective, analysis, sources)
         return {"report": fallback.model_dump(), "errors": [f"report error: {exc}"]}

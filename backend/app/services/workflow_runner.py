@@ -76,7 +76,7 @@ async def run_workflow(session_id: str, *, resume: bool = False) -> None:
         session = await repo.get_session(db, session_id)
         if session is None:
             logger.warning(
-                "run requested for missing session", extra={"ctx_session": session_id},
+                "run requested for missing session", extra={"session": session_id},
             )
             return
 
@@ -137,10 +137,10 @@ async def run_workflow(session_id: str, *, resume: bool = False) -> None:
             await pubsub.publish(
                 session_id, {"type": "done", "status": STATUS_COMPLETED},
             )
-            logger.info("workflow completed", extra={"ctx_session": session_id})
+            logger.info("workflow completed", extra={"session": session_id})
 
         except Exception as exc:
-            logger.exception("workflow failed", extra={"ctx_session": session_id})
+            logger.exception("workflow failed", extra={"session": session_id})
             await repo.update_session_status(
                 db, session_id, STATUS_FAILED, error=str(exc),
             )

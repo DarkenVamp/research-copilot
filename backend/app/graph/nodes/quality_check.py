@@ -48,6 +48,6 @@ async def quality_node(state: ResearchState) -> dict:
             qa.passed = qa.score >= settings.quality_threshold
         return {"quality": qa.model_dump()}
     except Exception as exc:  # noqa: BLE001 - on judge failure, pass through to report
-        logger.warning("quality check failed, passing through", extra={"ctx_error": str(exc)})
+        logger.warning("quality check failed, passing through", extra={"error": str(exc)})
         passthrough = QualityAssessment(score=settings.quality_threshold, passed=True)
         return {"quality": passthrough.model_dump(), "errors": [f"quality error: {exc}"]}

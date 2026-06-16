@@ -82,5 +82,5 @@ async def fetch_url(url: str | None) -> str:
             text = _WS_RE.sub(" ", text).strip()
             return text[:4000]
     except Exception as exc:  # noqa: BLE001 - degrade gracefully
-        logger.warning("fetch_url failed", extra={"ctx_url": url, "ctx_error": str(exc)})
+        logger.warning("fetch_url failed", extra={"url": url, "error": str(exc)})
         return ""

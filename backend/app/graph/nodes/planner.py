@@ -40,7 +40,7 @@ async def planner_node(state: ResearchState) -> dict:
             )
         return {"plan": plan.model_dump()}
     except Exception as exc:  # noqa: BLE001 - degrade with a minimal plan
-        logger.warning("planner failed, using fallback", extra={"ctx_error": str(exc)})
+        logger.warning("planner failed, using fallback", extra={"error": str(exc)})
         fallback = mock.mock_plan(company, objective)
         return {
             "plan": fallback.model_dump(),
