@@ -4,7 +4,7 @@ Spins up an ephemeral Postgres (via testcontainers) for the whole test session
 and points the app at it, with mock mode forced (no API keys). Using real
 Postgres means the tests exercise the JSONB columns and the AsyncPostgresSaver
 checkpointer exactly as in production. The container is started before any app
-module is imported so the cached Settings pick up DATABASE_URL.
+module is imported so the module-level Settings pick up DATABASE_URL.
 
 Requires a running Docker daemon.
 """

@@ -7,15 +7,20 @@ LangGraph workflow, and PostgreSQL for both application data and graph
 checkpoints. External capability comes from OpenAI (LLM) and Tavily (web search).
 
 ```
-┌──────────────┐   HTTP + SSE    ┌──────────────────────────────┐    ┌────────────┐
-│ React (Vite) │ ───────────────▶│ FastAPI                      │───▶│ PostgreSQL │
-│              │ ◀───────────────│  api/      sessions/workflow/ │    │ app tables │
-│ stepper, UI  │  report/events  │            chat/health        │    │ + langgraph│
-└──────────────┘                 │  services/ engine, runner,    │    │ checkpoints│
-                                  │            pubsub             │    └────────────┘
-                                  │  graph/    nodes, router,     │
-                                  │            builder, tools     │──▶ OpenAI / Tavily
-                                  └──────────────────────────────┘
+                                      +--------------------+
++------------------+                  | FastAPI            |      +-------------+
+| React (Vite) SPA |    HTTP + SSE    |                    |      | PostgreSQL  |
+|                  |  --------------> | sessions           | ---->|             |
+| session create   |  <-------------- | workflow (run/SSE) |      | app data    |
+| history / detail |  report+events   | chat (SSE)         |      | + LangGraph |
+| live stepper     |                  | LangGraph engine   |      | checkpoints |
+| follow-up chat   |                  | SSE pub/sub        |      +-------------+
++------------------+                  +--------------------+
+                                                 |
+                                                 v  tools
+                                      +-----------------+
+                                      | OpenAI / Tavily |
+                                      +-----------------+
 ```
 
 ## Request / data flow
@@ -39,9 +44,13 @@ checkpoints. External capability comes from OpenAI (LLM) and Tavily (web search)
 ## The LangGraph workflow
 
 ```
-START → planner → research → analysis → quality_check ─(passed | retries exhausted)→ report → END
-                     ▲                          │
-                     └──────── gaps (retry) ────┘
+                                            gaps (retry)
+                                +-----------------------------------+
+                                |                                   |
+                                v                                   |         pass
+          +---------+     +----------+     +----------+     +---------------+     +--------+
+START --> | Planner | --> | Research | --> | Analysis | --> | Quality Check | --> | Report | --> END
+          +---------+     +----------+     +----------+     +---------------+     +--------+
 ```
 
 ### Shared state (`app/graph/state.py`)

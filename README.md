@@ -18,15 +18,13 @@ streamed to the UI, per-node failure handling, and **checkpoint-based
 recoverability**.
 
 ```
-        ┌─────────┐   ┌──────────┐   ┌──────────┐   ┌───────────────┐
-START ─▶│ Planner │─▶ │ Research │─▶ │ Analysis │─▶ │ Quality Check │──┐
-        └─────────┘   └──────────┘   └──────────┘   └───────────────┘  │
-                           ▲                                            │ conditional
-                           └────────────── gaps (retry) ───────────────┤
-                                                                        ▼
-                                                                  ┌──────────┐
-                                                                  │  Report  │─▶ END
-                                                                  └──────────┘
+                                            gaps (retry)
+                                +-----------------------------------+
+                                |                                   |
+                                v                                   |         pass
+          +---------+     +----------+     +----------+     +---------------+     +--------+
+START --> | Planner | --> | Research | --> | Analysis | --> | Quality Check | --> | Report | --> END
+          +---------+     +----------+     +----------+     +---------------+     +--------+
 ```
 
 The **Quality Check** node is an LLM-as-judge that scores the analysis; if it
@@ -48,7 +46,8 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
 - **Structured report** — Company Overview, Products & Services, Target Customers,
   Business Signals, Risks & Challenges, Suggested Discovery Questions, Suggested
   Outreach Strategy, Unknowns, and verified Sources.
-- **Follow-up chat** — grounded strictly in the generated report.
+- **Follow-up chat** — grounded strictly in the generated report; answers stream
+  back token-by-token over SSE.
 - **Persistence** — sessions, reports, events, and chat in PostgreSQL; graph
   checkpoints for recoverability.
 - **Real web research** — Tavily search + website fetch, with cited sources.
@@ -60,16 +59,20 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
 ## Architecture
 
 ```
-┌──────────────┐     HTTP / SSE      ┌─────────────────────────┐     ┌────────────┐
-│  React (Vite)│ ──────────────────▶ │  FastAPI                │ ──▶ │ PostgreSQL │
-│  - sessions  │ ◀────────────────── │  - session/workflow/chat│     │  app data  │
-│  - stepper   │   report + events   │  - LangGraph engine     │     │  + graph   │
-│  - chat      │                     │  - SSE pub/sub          │     │  checkpts  │
-└──────────────┘                     └───────────┬─────────────┘     └────────────┘
-                                                 │ tools
-                                       ┌─────────▼──────────┐
-                                       │ OpenAI · Tavily    │
-                                       └────────────────────┘
+                                      +--------------------+
++------------------+                  | FastAPI            |      +-------------+
+| React (Vite) SPA |    HTTP + SSE    |                    |      | PostgreSQL  |
+|                  |  --------------> | sessions           | ---->|             |
+| session create   |  <-------------- | workflow (run/SSE) |      | app data    |
+| history / detail |  report+events   | chat (SSE)         |      | + LangGraph |
+| live stepper     |                  | LangGraph engine   |      | checkpoints |
+| follow-up chat   |                  | SSE pub/sub        |      +-------------+
++------------------+                  +--------------------+
+                                                 |
+                                                 v  tools
+                                      +-----------------+
+                                      | OpenAI / Tavily |
+                                      +-----------------+
 ```
 
 ---
@@ -120,6 +123,8 @@ Backend settings (see [`backend/.env.example`](backend/.env.example)):
 
 | Variable               | Default                                              | Notes |
 |------------------------|------------------------------------------------------|-------|
+| `ENVIRONMENT`          | `dev`                                                | `local` ⇒ plain logs; any other value ⇒ JSON logs |
+| `LOG_LEVEL`            | `INFO`                                               | Root log level |
 | `OPENAI_API_KEY`       | _(empty)_                                            | Empty ⇒ mock mode |
 | `OPENAI_MODEL`         | `gpt-4o`                                              | Synthesis nodes |
 | `OPENAI_FAST_MODEL`    | `gpt-4o-mini`                                         | Routing / quality judge |
