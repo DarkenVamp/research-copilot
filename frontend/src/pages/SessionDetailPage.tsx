@@ -20,8 +20,10 @@ export function SessionDetailPage() {
   const resumeWorkflow = useResumeWorkflow(id);
   const [started, setStarted] = useState(false);
 
-  // When a run finishes, refresh this session and the sidebar list (status badge).
-  function handleFinished() {
+  // Refresh this session and the sidebar list (status badge) on each workflow
+  // transition: created → running (onStarted) and running → completed/failed
+  // (onFinished). Without this the badges stay "Not started" until a refetch.
+  function refreshStatus() {
     refetch();
     queryClient.invalidateQueries({ queryKey: sessionKeys.all });
   }
@@ -105,7 +107,8 @@ export function SessionDetailPage() {
             sessionId={session.id}
             enabled={showProgress}
             status={session.status}
-            onFinished={handleFinished}
+            onFinished={refreshStatus}
+            onStarted={refreshStatus}
           />
         )}
 

@@ -31,16 +31,19 @@ export function WorkflowProgress({
   enabled,
   status,
   onFinished,
+  onStarted,
 }: {
   sessionId: string;
   enabled: boolean;
   status: SessionStatus;
   onFinished: () => void;
+  onStarted?: () => void;
 }) {
   const { byNode, finished, error } = useEventStream(
     sessionId,
     enabled,
     onFinished,
+    onStarted,
   );
 
   // The first not-yet-completed node is the one currently running.

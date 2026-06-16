@@ -25,6 +25,7 @@ export function useEventStream(
   sessionId: string,
   enabled: boolean,
   onFinished?: () => void,
+  onStarted?: () => void,
 ): StreamState {
   const [state, setState] = useState<StreamState>({
     events: [],
@@ -33,15 +34,27 @@ export function useEventStream(
     error: null,
   });
   const finishedRef = useRef(false);
+  const startedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
     finishedRef.current = false;
+    startedRef.current = false;
     setState({ events: [], byNode: {}, finished: false, error: null });
 
     const es = new EventSource(api.streamUrl(sessionId));
 
+    // Fire once when the run shows life so callers can refresh status badges
+    // (created → running). The `started` event covers the normal case; the
+    // first node event is a safety net for subscribers that join after it.
+    const markStarted = () => {
+      if (startedRef.current || finishedRef.current) return;
+      startedRef.current = true;
+      onStarted?.();
+    };
+
     const handleNode = (raw: MessageEvent) => {
+      markStarted();
       const msg = JSON.parse(raw.data) as WorkflowEvent;
       setState((prev) => {
         const prevNode = prev.byNode[msg.node];
@@ -70,6 +83,7 @@ export function useEventStream(
     };
 
     es.addEventListener("node", handleNode);
+    es.addEventListener("started", markStarted);
     es.addEventListener("done", () => finish(null));
     es.addEventListener("error", (e) => {
       const m = e as MessageEvent;
